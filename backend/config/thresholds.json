@@ -1,0 +1,26 @@
+{
+    "temperature": {
+        "extreme_heat": 35,
+        "heat": 28,
+        "comfort_min": 15,
+        "comfort_max": 25,
+        "cold": 10,
+        "extreme_cold": 0
+    },
+    "precipitation": {
+        "light": 2,
+        "moderate": 10,
+        "heavy": 20
+    },
+    "wind": {
+        "calm": 5,
+        "moderate": 15,
+        "strong": 25
+    },
+    "humidity": {
+        "very_low": 30,
+        "low": 40,
+        "high": 70,
+        "very_high": 80
+    }
+}
