@@ -29,32 +29,11 @@
             <h1 style="text-align: center; margin-bottom: 40px; color: #00ffff; font-size: 3rem;">Weather Mission Control</h1>
             
             <form class="search-form" onsubmit="handleSubmit(event)">
-                <section id="location-section" style="padding: 60px 20px; background: #0f172a; color: #f1f5f9; text-align: center;">
-  <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px; color: #38bdf8; text-shadow: 0px 0px 6px rgba(56, 189, 248, 0.6);">
-    Find Your Location
-  </h2>
-  <div style="max-width: 500px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-  <h2 style="text-align: center; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif; color: #333;">
-    Find Location Coordinates
-  </h2>
-  <form action="http://127.0.0.1:5000/get-coords" method="POST" style="display: flex; flex-direction: column; gap: 12px;">
-    <input 
-      type="text" 
-      name="place_name" 
-      placeholder="Enter a location..." 
-      required
-      style="padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 15px;"
-    >
-    <button 
-      type="submit" 
-      style="padding: 12px; border: none; border-radius: 10px; background: #4CAF50; color: white; font-size: 16px; cursor: pointer; transition: background 0.3s;">
-      Get Coordinates
-    </button>
-  </form>
-</div>
-
-</section>
-
+                <div class="form-group">
+                    <label for="location-input">📍 Event Location</label>
+                    <input type="text" id="location-input" class="form-control" placeholder="Enter a city, address, or landmark" required>
+                    <small id="location-help" class="form-text">You can also paste coordinates (lat,lon)</small>
+                </div>
 
                 <div class="form-group">
                     <label for="datetime">📅 Event Date & Time</label>

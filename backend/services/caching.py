@@ -1,11 +1,13 @@
-import json
 import os
+import json
+import time
 from datetime import datetime, timedelta
 
 
-class SimpleCache:
+class HybridCache:
     def __init__(self, cache_dir="cache"):
         self.cache_dir = cache_dir
+        self._memory_cache = {}
 
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
@@ -14,8 +16,16 @@ class SimpleCache:
         return os.path.join(self.cache_dir, f"{key}.json")
 
     def get(self, key):
-        cache_path = self._get_cache_path(key)
+        # 1. Check memory cache
+        if key in self._memory_cache:
+            cached_item = self._memory_cache[key]
+            if time.time() < cached_item["expires"]:
+                return cached_item["data"]
+            else:
+                del self._memory_cache[key]  # expired in memory
 
+        # 2. Check file cache
+        cache_path = self._get_cache_path(key)
         if not os.path.exists(cache_path):
             return None
 
@@ -30,24 +40,39 @@ class SimpleCache:
                 os.remove(cache_path)
                 return None
 
-            return cache_data["data"]
+            # If valid, load into memory too
+            data = cache_data["data"]
+            expiry_time = time.time() + (expiry_hours * 3600)
+            self._memory_cache[key] = {"data": data, "expires": expiry_time}
+            return data
+
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return None
 
     def set(self, key, data, expiry_hours=24):
+        expiry_time = time.time() + (expiry_hours * 3600)
+
+        # 1. Save in memory
+        self._memory_cache[key] = {"data": data, "expires": expiry_time}
+
+        # 2. Save in file
         cache_path = self._get_cache_path(key)
-
         try:
-            cache_data = {"data": data, "timestamp": datetime.now().isoformat(), "expiry_hours": expiry_hours}
-
+            cache_data = {
+                "data": data,
+                "timestamp": datetime.now().isoformat(),
+                "expiry_hours": expiry_hours,
+            }
             with open(cache_path, "w") as f:
                 json.dump(cache_data, f)
             return True
-        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        except Exception as e:
+            print(f"Error writing cache file: {e}")
             return False
 
 
-cache = SimpleCache()
+# Global cache instance
+cache = HybridCache()
 
 
 def cache_response(key, data, expiry_hours=24):

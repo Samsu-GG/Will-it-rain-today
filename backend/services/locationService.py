@@ -26,13 +26,3 @@ def get_coordinates(place_name: str):
     except Exception as e:
         print(f"Error fetching coordinates: {e}")
         return None
-
-
-
-if __name__ == "__main__":
-    location=input("Enter The location name: ") 
-    coords = get_coordinates(location)
-    if coords:
-        print(f"Coordinates of {location}: {coords}")
-    else:
-        print("Location not found")
