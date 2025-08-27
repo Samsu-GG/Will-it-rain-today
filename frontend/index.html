@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will It Rain On My Parade?</title>
+    <link rel="stylesheet" href="style.css">
+          
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="page active" id="landing">
+        <div class="hero">
+            <h1>Will It Rain On My Parade?</h1>
+            <h2>Plan your perfect day with weather-driven comfort insights.</h2>
+            <p>From parades to picnics, concerts to celebrations - get precise weather predictions and comfort analysis for your special events. Our advanced algorithms combine satellite data with local weather patterns to help you plan with confidence.</p>
+            <div style="margin-bottom: 2rem;">
+                <strong style="font-size: 1.4rem; color: #00ffff;">"The sky is not the limit, plan with confidence!"</strong>
+            </div>
+            <button class="glow-button" onclick="showPage('search')">
+                🚀 Start Your Query
+            </button>
+        </div>
+    </div>
+
+    <div class="page" id="search">
+        <div class="search-container">
+            <h1 style="text-align: center; margin-bottom: 40px; color: #00ffff; font-size: 3rem;">Weather Mission Control</h1>
+            
+            <form class="search-form" onsubmit="handleSubmit(event)">
+                <section id="location-section" style="padding: 60px 20px; background: #0f172a; color: #f1f5f9; text-align: center;">
+  <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px; color: #38bdf8; text-shadow: 0px 0px 6px rgba(56, 189, 248, 0.6);">
+    Find Your Location
+  </h2>
+  <div style="max-width: 500px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+  <h2 style="text-align: center; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif; color: #333;">
+    Find Location Coordinates
+  </h2>
+  <form action="http://127.0.0.1:5000/get-coords" method="POST" style="display: flex; flex-direction: column; gap: 12px;">
+    <input 
+      type="text" 
+      name="place_name" 
+      placeholder="Enter a location..." 
+      required
+      style="padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 15px;"
+    >
+    <button 
+      type="submit" 
+      style="padding: 12px; border: none; border-radius: 10px; background: #4CAF50; color: white; font-size: 16px; cursor: pointer; transition: background 0.3s;">
+      Get Coordinates
+    </button>
+  </form>
+</div>
+
+</section>
+
+
+                <div class="form-group">
+                    <label for="datetime">📅 Event Date & Time</label>
+                    <input type="datetime-local" id="datetime" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="event-type">🎪 Event Type</label>
+                    <select id="event-type" class="form-control" required>
+                        <option value="">Select your event type</option>
+                        <option value="parade">🎊 Parade</option>
+                        <option value="concert">🎵 Concert</option>
+                        <option value="picnic">🧺 Picnic</option>
+                        <option value="wedding">💒 Wedding</option>
+                        <option value="sports">⚽ Sports Event</option>
+                        <option value="festival">🎪 Festival</option>
+                        <option value="birthday">🎂 Birthday Party</option>
+                        <option value="other">🎯 Other</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span>🚀</span> Launch Weather Analysis
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="rocket">🚀</div>
+                <h2>Launching satellites...</h2>
+                <p>Analyzing atmospheric conditions for your event</p>
+            </div>
+
+            <div class="results" id="results">
+                <h2 style="text-align: center; color: #00ffff; margin-bottom: 30px;">🌟 Weather Intelligence Report</h2>
+                
+                <div class="weather-cards" id="weather-cards">
+                    </div>
+
+                <div style="text-align: center; margin: 40px 0;">
+                    <h3 style="color: #00ffff; margin-bottom: 20px;">Overall Comfort Risk</h3>
+                    <div class="weather-meter">
+                        <svg width="300" height="200" viewBox="0 0 300 200">
+                            <defs>
+                                <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#2ecc71;stop-opacity:1" />
+                                    <stop offset="50%" style="stop-color:#f39c12;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#e74c3c;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M 40 160 A 110 110 0 0 1 260 160" stroke="url(#meterGradient)" stroke-width="20" fill="none"/>
+                            <path d="M 40 160 A 110 110 0 0 1 260 160" stroke="rgba(255,255,255,0.2)" stroke-width="25" fill="none"/>
+                            <line id="meter-needle" x1="150" y1="160" x2="150" y2="70" stroke="#00ffff" stroke-width="3" transform-origin="150 160"/>
+                            <circle cx="150" cy="160" r="8" fill="#00ffff"/>
+                        </svg>
+                        <div style="margin-top: 10px;">
+                            <span style="float: left; color: #2ecc71;">Perfect</span>
+                            <span style="float: right; color: #e74c3c;">High Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="suggestions" id="suggestions">
+                    <h3>🎯 Smart Recommendations</h3>
+                    <div id="suggestion-list">
+                        </div>
+                </div>
+
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportResults()">📸 Download Report</button>
+                    <button class="export-btn" onclick="shareResults()">🔗 Share Results</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🛰️ Data & Methodology</h2>
+                <div class="data-method-grid">
+                    <div class="data-method-item">
+                        <div class="data-method-icon">🛰️</div>
+                        <h3 style="color: #00ffff;">GPM IMERG</h3>
+                        <p>Global Precipitation Measurement for accurate rainfall predictions</p>
+                    </div>
+                    <div class="data-method-item">
+                        <div class="data-method-icon">🌡️</div>
+                        <h3 style="color: #00ffff;">NWP Models</h3>
+                        <p>Numerical Weather Prediction for temperature and wind forecasts</p>
+                    </div>
+                    <div class="data-method-item">
+                        <div class="data-method-icon">📡</div>
+                        <h3 style="color: #00ffff;">Local Sensors</h3>
+                        <p>Real-time ground station data for precision accuracy</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>👨‍🚀 Mission Team</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="member-photo">👨‍💻</div>
+                        <h3>Fahim Bin Zaman</h3>
+                        <p>Lead Developer</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-photo">👩‍🔬</div>
+                        <h3>Shamsul Islam Fahim</h3>
+                        <p>Content Writer & Documentation Lead</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-photo">👨‍🎨</div>
+                        <h3>Mushfiq Iqbal</h3>
+                        <p>Backend Developer</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-photo">👩‍💼</div>
+                        <h3>Istiyack Ahmed</h3>
+                        <p>Data Analyst</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-photo">👩‍💼</div>
+                        <h3>Mustavi Rahman Tripto</h3>
+                        <p>Videographer</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-photo">👩‍💼</div>
+                        <h3>Nokibur Rahman</h3>
+                        <p>UI/UX Designer</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🚀 Built for <strong>NASA Space Apps Challenge 2025</strong></p>
+        <p>
+            <a href="https://github.com/Samsu-GG/Will-it-rain-today" onclick="alert('GitHub repo coming soon!')">📂 GitHub Repository</a> | 
+            <a href="#" onclick="alert('Contact: team@weatherparade.space')">📧 Contact Us</a>
+        </p>
+        <p style="margin-top: 15px; opacity: 0.7;">
+            Data sources: NASA GPM IMERG, NOAA NWP Models, Local Weather Stations
+        </p>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
