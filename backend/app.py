@@ -8,7 +8,9 @@ from services.forecastService import ForecastClient
 from services.riskCalculator import RiskCalculator
 import datetime
 import os
+from services.weatherCondition import WeatherConditionClassifier
 
+condition_classifier = WeatherConditionClassifier()
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -98,6 +100,11 @@ def get_future_data(latitude, longitude, target_date):
                     temp_list[i], precip_list[i], wind_list[i], humidity_list[i]
                 )
 
+                # Get weather condition
+                condition = condition_classifier.get_condition(
+                    temp_list[i], precip_list[i], wind_list[i], humidity_list[i]
+                )
+
                 hourly_data.append(
                     {
                         "time": time_list[i],
@@ -106,12 +113,14 @@ def get_future_data(latitude, longitude, target_date):
                         "wind_speed": wind_list[i],
                         "humidity": humidity_list[i],
                         "risk_assessment": risk_assessment,
+                        "condition": condition,
                         "source": "forecast",
                     }
                 )
 
     print(f"✅ Future data points processed: {len(hourly_data)}")
     return hourly_data
+
 
 
 def get_historical_data(latitude, longitude, target_date, current_time, is_today):
@@ -124,19 +133,21 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
     if nasa_data and "properties" in nasa_data:
         properties = nasa_data["properties"]["parameter"]
 
-        # Process each hour with the correct NASA time key format
         for hour in range(24):
-            # NASA uses format "YYYYMMDDHH" (e.g., "2023011500" for hour 0)
             time_key = f"{target_date_str}{hour:02d}"
 
             if ("T2M" in properties and time_key in properties["T2M"] and (hour <= current_time.hour or not is_today)):
-
                 temperature = properties["T2M"][time_key]
                 precipitation = properties["PRECTOTCORR"].get(time_key, 0) if "PRECTOTCORR" in properties else 0
                 wind_speed = properties["WS2M"].get(time_key, 0) if "WS2M" in properties else 0
                 humidity = properties["RH2M"].get(time_key) if "RH2M" in properties else None
 
                 risk_assessment = risk_calculator.calculate_hourly_risk(
+                    temperature, precipitation, wind_speed, humidity
+                )
+
+                # Get weather condition
+                condition = condition_classifier.get_condition(
                     temperature, precipitation, wind_speed, humidity
                 )
 
@@ -148,6 +159,7 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
                         "wind_speed": wind_speed,
                         "humidity": humidity,
                         "risk_assessment": risk_assessment,
+                        "condition": condition,
                         "source": "nasa",
                     }
                 )
@@ -155,7 +167,7 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
             else:
                 print(f"❌ No data found for hour {hour} with key: {time_key}")
 
-    # For today, get forecast for remaining hours (keep this part the same)
+    # For today, get forecast for remaining hours
     if is_today and current_time.hour < 23:
         print("🌤️ Getting forecast for remaining hours of today")
         forecast_data = forecast_client.get_hourly_forecast(
@@ -172,8 +184,12 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
             for i in range(len(time_list)):
                 time_obj = datetime.datetime.fromisoformat(time_list[i])
                 if time_obj.date() == current_time.date() and time_obj.hour > current_time.hour:
-
                     risk_assessment = risk_calculator.calculate_hourly_risk(
+                        temp_list[i], precip_list[i], wind_list[i], humidity_list[i]
+                    )
+
+                    # Get weather condition
+                    condition = condition_classifier.get_condition(
                         temp_list[i], precip_list[i], wind_list[i], humidity_list[i]
                     )
 
@@ -185,12 +201,14 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
                             "wind_speed": wind_list[i],
                             "humidity": humidity_list[i],
                             "risk_assessment": risk_assessment,
+                            "condition": condition,
                             "source": "forecast",
                         }
                     )
 
     print(f"📦 Total hourly data points processed: {len(hourly_data)}")
     return hourly_data
+
 @app.route('/')
 def serve_frontend():
     return send_from_directory('.', 'index.html')
@@ -217,3 +235,4 @@ def get_location_coordinates():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+ 
