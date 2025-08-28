@@ -10,17 +10,17 @@ class NasaPowerClient:
         self.hourly_parameters = "T2M,PRECTOTCORR,WS2M,RH2M"
         self.daily_parameters = "T2M,PRECTOT,WS2M"
 
-    def get_hourly_weather_data(self, latitude, longitude, start_date, end_date):
+    def get_hourly_weather_data(self, latitude, longitude, start_date, end_date): #specific loaction,date, hourly data
         print(f"🚀 NASA Hourly Client called: lat={latitude}, lon={longitude}, start={start_date}, end={end_date}")
 
         cache_key = f"hourly_{latitude}_{longitude}_{start_date}_{end_date}"
-        cached_data = get_cached_response(cache_key)
+        cached_data = get_cached_response(cache_key) # check if the data is in cache 
 
-        if cached_data:
+        if cached_data: # if has then return it
             print(f"📦 Using cached hourly data for {cache_key}")
             return cached_data
 
-        params = {
+        params = {  # parameter is needed for api call
             "parameters": self.hourly_parameters,
             "start": start_date,
             "end": end_date,
@@ -35,18 +35,18 @@ class NasaPowerClient:
 
         try:
             # Add timeout to prevent hanging
-            response = requests.get(self.HOURLY_BASE_URL, params=params, timeout=15)
+            response = requests.get(self.HOURLY_BASE_URL, params=params, timeout=15) # if server dont repose in 15 sec then it will be a error otherwise we may wait for infinity times
             print(f"📡 NASA Hourly API Response Status: {response.status_code}")
 
-            if response.status_code != 200:
+            if response.status_code != 200: # status code 200 means all data is found
                 print(f"❌ NASA Hourly API Error Status: {response.status_code}")
                 print(f"❌ Error Response: {response.text[:200]}...")  # First 200 chars
                 return None
 
             response.raise_for_status()
-            data = response.json()
+            data = response.json() #JSON → python dict
 
-            # Debug the response
+            # Debug the response... if the data is come or not, which parameter is founded
             print(f"✅ NASA Hourly Data received, type: {type(data)}")
             if data:
                 print(f"📊 Data keys: {list(data.keys())}")
@@ -62,11 +62,11 @@ class NasaPowerClient:
                         if hours_with_data:
                             print(f"📅 Sample time keys: {hours_with_data[:3]}")  # First 3 keys
 
-            cache_response(cache_key, data)
+            cache_response(cache_key, data) #sent to cache 
             print(f"💾 Cached hourly data for {cache_key}")
             return data
 
-        except requests.exceptions.Timeout:
+        except requests.exceptions.Timeout: #error check
             print("⏰ NASA Hourly API request timed out after 15 seconds")
             return None
         except requests.exceptions.RequestException as e:
@@ -79,11 +79,11 @@ class NasaPowerClient:
             traceback.print_exc()
             return None
 
-    def get_daily_weather_data(self, latitude, longitude, start_date, end_date):
+    def get_daily_weather_data(self, latitude, longitude, start_date, end_date): 
         print(f"🚀 NASA Daily Client called: lat={latitude}, lon={longitude}, start={start_date}, end={end_date}")
 
         cache_key = f"daily_{latitude}_{longitude}_{start_date}_{end_date}"
-        cached_data = get_cached_response(cache_key)
+        cached_data = get_cached_response(cache_key) #store all data in cached_data
 
         if cached_data:
             print(f"📦 Using cached daily data for {cache_key}")
