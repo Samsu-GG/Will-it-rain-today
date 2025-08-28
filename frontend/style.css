@@ -57,19 +57,8 @@ body {
     justify-content: center;
     min-height: 100vh;
     text-align: center;
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     position: relative;
-}
-
-.hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="grad"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.8"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="2" fill="url(%23grad)"/><circle cx="800" cy="300" r="1.5" fill="url(%23grad)"/><circle cx="400" cy="600" r="1" fill="url(%23grad)"/><circle cx="700" cy="100" r="2.5" fill="url(%23grad)"/><circle cx="100" cy="500" r="1.2" fill="url(%23grad)"/></svg>') repeat;
-    animation: float 6s ease-in-out infinite;
+    padding: 2rem;
 }
 
 .hero h1 {
@@ -95,6 +84,13 @@ body {
     opacity: 0.8;
 }
 
+.hero-buttons {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 .glow-button {
     background: linear-gradient(45deg, #00ffff, #0080ff);
     border: none;
@@ -110,9 +106,21 @@ body {
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
 }
 
+.glow-button.secondary {
+    background: transparent;
+    border: 2px solid #00ffff;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
 .glow-button:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 30px rgba(0, 255, 255, 0.8);
+}
+
+.glow-button.secondary:hover {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    background: #00ffff20;
 }
 
 @keyframes glow {
@@ -134,6 +142,7 @@ body {
     padding: 40px;
     margin-bottom: 40px;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative; /* Needed for suggestions box positioning */
 }
 
 .form-group {
@@ -163,11 +172,58 @@ body {
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
-#map {
-    height: 300px;
+/* New: Location suggestions box */
+.suggestions-box {
+    position: absolute;
+    z-index: 10;
+    width: calc(100% - 80px); /* Adjust based on form padding */
+    background: rgba(10, 10, 15, 0.9);
+    border: 1px solid #00ffff;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* Hidden by default */
+}
+
+.suggestions-box.visible {
+    display: block;
+}
+
+.suggestion-item-loc {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item-loc:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+}
+
+/* New: Datetime input wrapper and OK button */
+.datetime-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.datetime-wrapper .form-control {
+    flex-grow: 1;
+}
+
+.btn-ok {
+    padding: 15px 25px;
+    background-color: #00ffff;
+    color: black;
+    border: none;
     border-radius: 10px;
-    border: 2px solid rgba(0, 255, 255, 0.3);
-    margin-top: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-ok:hover {
+    background-color: #00e6e6;
 }
 
 .submit-btn {
@@ -402,6 +458,9 @@ body {
         grid-template-columns: 1fr;
     }
     .export-buttons {
+        flex-direction: column;
+    }
+    .datetime-wrapper {
         flex-direction: column;
     }
 }
