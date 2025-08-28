@@ -1,7 +1,6 @@
 // script.js - Complete file for connecting frontend to Flask backend
 
 // API base URL - change this in production
-// Change this at the top of your script.js
 const API_BASE_URL = 'http://localhost:5000';
 
 // Function to create animated stars
@@ -27,12 +26,64 @@ function showPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
-// Event listener to update the Google Maps link
-document.getElementById('location-input').addEventListener('input', (e) => {
-    const location = encodeURIComponent(e.target.value);
-    const mapsLink = document.getElementById('google-maps-link');
-    mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${location}`;
+// ------------------------------------
+// New: Location Suggestion Feature
+// ------------------------------------
+document.getElementById('location-input').addEventListener('input', debounce(async (e) => {
+    const query = e.target.value.trim();
+    const suggestionsBox = document.getElementById('location-suggestions');
+
+    if (query.length < 3) {
+        suggestionsBox.classList.remove('visible');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/location/search?query=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch suggestions');
+        }
+        const suggestions = await response.json();
+        
+        suggestionsBox.innerHTML = '';
+        if (suggestions.length > 0) {
+            suggestions.forEach(item => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item-loc';
+                suggestionDiv.textContent = item.place_name;
+                suggestionDiv.addEventListener('click', () => {
+                    document.getElementById('location-input').value = item.place_name;
+                    suggestionsBox.classList.remove('visible');
+                });
+                suggestionsBox.appendChild(suggestionDiv);
+            });
+            suggestionsBox.classList.add('visible');
+        } else {
+            suggestionsBox.classList.remove('visible');
+        }
+
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        suggestionsBox.classList.remove('visible');
+    }
+}, 300));
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.form-group')) {
+        document.getElementById('location-suggestions').classList.remove('visible');
+    }
 });
+
+// Debounce function to limit API calls
+function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+// ------------------------------------
 
 async function handleSubmit(event) {
     event.preventDefault();
@@ -111,7 +162,7 @@ async function handleSubmit(event) {
 // Display weather results from backend data
 function displayWeatherResults(weatherData, datetime, eventType) {
     const eventDateTime = new Date(datetime);
-    const eventHourUTC = eventDateTime.getUTCHours();  // Use UTC hours
+    const eventHourUTC = eventDateTime.getUTCHours(); // Use UTC hours
     
     // Find weather data for this specific hour
     const hourlyData = weatherData.hourly_data.find(hour => {
@@ -342,36 +393,6 @@ function shareResults() {
             alert('Could not copy link to clipboard.');
         });
     }
-}
-
-// Helper function to get coordinates (optional feature)
-function getCoordinates() {
-    const location = document.getElementById('location-input').value;
-    if (!location) {
-        alert('Please enter a location first');
-        return;
-    }
-    
-    fetch(`${API_BASE_URL}/api/location/coordinates`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ place_name: location })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            alert('Error: ' + data.error);
-        } else {
-            document.getElementById('location-input').value = `${data.lat}, ${data.lon}`;
-            alert(`Coordinates found: ${data.lat}, ${data.lon}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to get coordinates');
-    });
 }
 
 // Initial calls when page loads
