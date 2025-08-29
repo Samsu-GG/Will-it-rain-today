@@ -9,6 +9,8 @@ from services.riskCalculator import RiskCalculator
 import datetime
 import os
 from services.weatherCondition import WeatherConditionClassifier
+from services.autocomplete_name import get_area_suggestions
+
 
 condition_classifier = WeatherConditionClassifier()
 app = Flask(__name__)
@@ -208,6 +210,15 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
 
     print(f"📦 Total hourly data points processed: {len(hourly_data)}")
     return hourly_data
+@app.route("/api/location/suggest", methods=["GET"]) # for get area suggestion...
+def location_suggest():
+    query = request.args.get("q")
+    if not query:
+        return jsonify({"error": "Query parameter q is required"}), 400
+    
+    suggestions = get_area_suggestions(query)
+    return jsonify(suggestions)
+
 
 @app.route('/')
 def serve_frontend():
