@@ -1,9 +1,8 @@
-// script.js - Complete file for connecting frontend to Flask backend
+// script.js - Final with hourly cards + highlight + expand/collapse
 
-// API base URL - change this in production
 const API_BASE_URL = 'http://localhost:5000';
 
-// Function to create animated stars
+// Stars background
 function createStars() {
     const starsContainer = document.getElementById('stars');
     for (let i = 0; i < 100; i++) {
@@ -18,16 +17,14 @@ function createStars() {
     }
 }
 
-// Function to handle page navigation
+// Page switcher
 function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
 }
 
 // ------------------------------------
-// New: Location Suggestion Feature
+// Location Suggestion Feature
 // ------------------------------------
 document.getElementById('location-input').addEventListener('input', debounce(async (e) => {
     const query = e.target.value.trim();
@@ -40,11 +37,9 @@ document.getElementById('location-input').addEventListener('input', debounce(asy
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/location/search?query=${encodeURIComponent(query)}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch suggestions');
-        }
+        if (!response.ok) throw new Error('Failed to fetch suggestions');
         const suggestions = await response.json();
-        
+
         suggestionsBox.innerHTML = '';
         if (suggestions.length > 0) {
             suggestions.forEach(item => {
@@ -61,21 +56,18 @@ document.getElementById('location-input').addEventListener('input', debounce(asy
         } else {
             suggestionsBox.classList.remove('visible');
         }
-
     } catch (error) {
         console.error('Error fetching suggestions:', error);
         suggestionsBox.classList.remove('visible');
     }
 }, 300));
 
-// Hide suggestions when clicking outside
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.form-group')) {
         document.getElementById('location-suggestions').classList.remove('visible');
     }
 });
 
-// Debounce function to limit API calls
 function debounce(func, delay) {
     let timeoutId;
     return function(...args) {
@@ -83,75 +75,42 @@ function debounce(func, delay) {
         timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
 }
+
 // ------------------------------------
 
 async function handleSubmit(event) {
     event.preventDefault();
-    
+
     const location = document.getElementById('location-input').value;
     const datetime = document.getElementById('datetime').value;
     const eventType = document.getElementById('event-type').value;
-
-    console.log('Form submitted with:', { location, datetime, eventType });
 
     if (!location || !datetime || !eventType) {
         alert('Please fill in all fields!');
         return;
     }
 
-    // Show loading animation
     document.getElementById('loading').classList.add('show');
     document.getElementById('results').classList.remove('show');
 
     try {
-        console.log('Step 1: Getting coordinates for:', location);
-        
-        // Step 1: Get coordinates from location name
         const coordsResponse = await fetch(`${API_BASE_URL}/api/location/coordinates`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ place_name: location })
         });
-        
-        console.log('Coordinates response status:', coordsResponse.status);
-        
-        if (!coordsResponse.ok) {
-            const errorText = await coordsResponse.text();
-            console.error('Coordinates error:', errorText);
-            throw new Error('Failed to get coordinates for this location');
-        }
-        
+
+        if (!coordsResponse.ok) throw new Error('Failed to get coordinates');
         const coordinates = await coordsResponse.json();
-        console.log('Coordinates received:', coordinates);
-        
-        // Step 2: Get weather data
-        const date = datetime.split('T')[0]; // Extract YYYY-MM-DD from datetime
-        console.log('Step 2: Getting weather for date:', date);
-        
+
+        const date = datetime.split('T')[0];
         const weatherUrl = `${API_BASE_URL}/api/weather/hourly?lat=${coordinates.lat}&lon=${coordinates.lon}&date=${date}`;
-        console.log('Weather API URL:', weatherUrl);
-        
         const weatherResponse = await fetch(weatherUrl);
-        console.log('Weather response status:', weatherResponse.status);
-        
-        if (!weatherResponse.ok) {
-            const errorText = await weatherResponse.text();
-            console.error('Weather error:', errorText);
-            throw new Error('Failed to get weather data');
-        }
-        
+        if (!weatherResponse.ok) throw new Error('Failed to get weather data');
         const weatherData = await weatherResponse.json();
-        console.log('Weather data received:', weatherData);
-        
-        // Step 3: Process and display results
+
         displayWeatherResults(weatherData, datetime, eventType);
-        
-        // Hide loading, show results
-        document.getElementById('loading').classList.remove('show');
-        document.getElementById('results').classList.add('show');
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error: ' + error.message);
@@ -159,203 +118,169 @@ async function handleSubmit(event) {
     }
 }
 
-// Display weather results from backend data
-function displayWeatherResults(weatherData, datetime, eventType) {
-    const eventDateTime = new Date(datetime);
-    const eventHourUTC = eventDateTime.getUTCHours(); // Use UTC hours
-    
-    // Find weather data for this specific hour
-    const hourlyData = weatherData.hourly_data.find(hour => {
-        const hourTime = new Date(hour.time);
-        return hourTime.getUTCHours() === eventHourUTC;
-    });
-    
-    if (!hourlyData) {
-        alert('No weather data available for the selected time');
-        return;
-    }
-    
-    // Update the UI with real data
-    updateWeatherCards(hourlyData);
-    updateRiskMeter(hourlyData.risk_assessment);
-    generateSuggestions(eventType, hourlyData.risk_assessment);
-}
+// -----------------------
+// Cards rendering
+// -----------------------
 
-// Update weather cards with real data
-function updateWeatherCards(hourlyData) {
+let expandedCard = null;
+
+function displayWeatherResults(weatherData, datetime, eventType) {
     const cardsContainer = document.getElementById('weather-cards');
     cardsContainer.innerHTML = '';
-    
-    const riskData = hourlyData.risk_assessment.details;
-    const overallRisk = hourlyData.risk_assessment.overall_risk;
-    
-    // Create cards for each weather parameter
-    const parameters = [
-        { 
-            name: 'Temperature', 
-            value: `${hourlyData.temperature}°C`, 
-            risk: riskData.temperature.risk,
-            icon: getTemperatureIcon(hourlyData.temperature),
-            message: riskData.temperature.message
-        },
-        { 
-            name: 'Precipitation', 
-            value: `${hourlyData.precipitation}mm`, 
-            risk: riskData.precipitation.risk,
-            icon: getPrecipitationIcon(hourlyData.precipitation),
-            message: riskData.precipitation.message
-        },
-        { 
-            name: 'Wind Speed', 
-            value: `${hourlyData.wind_speed}m/s`, 
-            risk: riskData.wind.risk,
-            icon: getWindIcon(hourlyData.wind_speed),
-            message: riskData.wind.message
-        },
-        { 
-            name: 'Humidity', 
-            value: hourlyData.humidity ? `${hourlyData.humidity}%` : 'N/A', 
-            risk: riskData.humidity ? riskData.humidity.risk : 'low',
-            icon: getHumidityIcon(hourlyData.humidity),
-            message: riskData.humidity ? riskData.humidity.message : 'No humidity data'
-        },
-        { 
-            name: 'Overall Comfort', 
-            value: '', 
-            risk: overallRisk,
-            icon: getOverallIcon(overallRisk),
-            message: hourlyData.risk_assessment.summary
-        }
-    ];
-    
-    parameters.forEach(param => {
-        const riskPercentage = param.risk === 'high' ? 90 : param.risk === 'medium' ? 60 : 20;
-        
-        const card = document.createElement('div');
-        card.className = 'weather-card';
-        card.innerHTML = `
-            <div class="weather-icon">${param.icon}</div>
-            <h3>${param.name}</h3>
-            <div style="font-size: 1.5rem; margin: 10px 0; color: ${param.risk === 'high' ? '#e74c3c' : param.risk === 'medium' ? '#f39c12' : '#2ecc71'}">
-                ${param.value}
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill ${param.risk}" style="width: ${riskPercentage}%"></div>
-            </div>
-            <p style="margin-top: 10px; font-size: 0.9rem;">${param.message}</p>
-        `;
+
+    const hours = Array.isArray(weatherData.hourly_data) ? weatherData.hourly_data : [];
+    if (hours.length === 0) {
+        alert('No hourly weather data available');
+        return;
+    }
+
+    hours.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    const eventDateTime = new Date(datetime);
+    const eventHourUTC = eventDateTime.getUTCHours();
+
+    hours.forEach(h => {
+        const isSelected = (new Date(h.time).getUTCHours() === eventHourUTC);
+        const card = createHourlyCard(h, isSelected);
         cardsContainer.appendChild(card);
     });
+
+    const selectedHourData = hours.find(h => new Date(h.time).getUTCHours() === eventHourUTC);
+    if (selectedHourData && selectedHourData.risk_assessment) {
+        generateSuggestions(eventType, selectedHourData.risk_assessment);
+    }
+
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('results').classList.add('show');
 }
 
-// Helper functions for icons
-function getTemperatureIcon(temp) {
-    if (temp >= 30) return '🌡️🔥';
-    if (temp >= 20) return '🌡️☀️';
-    if (temp >= 10) return '🌡️⛅';
-    return '🌡️❄️';
+function createHourlyCard(hourlyData, isSelected = false) {
+    const risk = hourlyData?.risk_assessment?.overall_risk || 'low';
+    const riskPct = risk === 'high' ? 90 : risk === 'medium' ? 60 : 20;
+    const localTime = new Date(hourlyData.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const card = document.createElement('div');
+    card.className = 'weather-card' + (isSelected ? ' highlight-hour' : '');
+    card.innerHTML = getCompactCardHTML(hourlyData, localTime, risk, riskPct);
+
+    card._data = { data: hourlyData, localTime, risk, riskPct };
+    card.addEventListener('click', () => toggleCardExpand(card));
+
+    return card;
 }
 
-function getPrecipitationIcon(precip) {
-    if (precip >= 10) return '🌧️☔';
-    if (precip >= 2) return '🌦️💧';
-    return '☀️💧';
+// Compact card view
+function getCompactCardHTML(hourlyData, localTime, risk, riskPct) {
+    return `
+        <div class="weather-icon">${getConditionIcon(hourlyData.condition)}</div>
+        <h3>${localTime}</h3>
+        <p style="font-size:1.05rem; color:#00ffff; margin-bottom:8px;">${hourlyData.condition || '—'}</p>
+        <div style="margin:8px 0; line-height:1.6;">
+            🌡️ ${hourlyData.temperature}°C | 🌧️ ${hourlyData.precipitation}mm | 💨 ${hourlyData.wind_speed}m/s
+        </div>
+        <div class="progress-bar" title="Overall risk">
+            <div class="progress-fill ${risk}" style="width:${riskPct}%"></div>
+        </div>
+    `;
 }
 
-function getWindIcon(wind) {
-    if (wind >= 15) return '💨🌪️';
-    if (wind >= 8) return '💨🍃';
-    return '💨😊';
+// Expanded card view
+function getExpandedCardHTML(hourlyData, localTime, risk, riskPct) {
+    return `
+        <div class="weather-icon" style="font-size:4rem;">${getConditionIcon(hourlyData.condition)}</div>
+        <h2 style="color:#00ffff;">${localTime} — ${hourlyData.condition || '—'}</h2>
+        <div style="margin:12px 0; font-size:1.1rem; line-height:1.8;">
+            🌡️ Temperature: <strong>${hourlyData.temperature}°C</strong><br>
+            🌧️ Precipitation: <strong>${hourlyData.precipitation} mm</strong><br>
+            💨 Wind Speed: <strong>${hourlyData.wind_speed} m/s</strong><br>
+            💧 Humidity: <strong>${hourlyData.humidity ?? 'N/A'} %</strong><br>
+        </div>
+        <div class="progress-bar" title="Overall risk">
+            <div class="progress-fill ${risk}" style="width:${riskPct}%"></div>
+        </div>
+        <p style="margin-top:12px;">Risk: <strong>${risk}</strong></p>
+        <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">${hourlyData.risk_assessment?.summary || ''}</p>
+    `;
 }
 
-function getHumidityIcon(humidity) {
-    if (!humidity) return '💦❓';
-    if (humidity >= 80) return '💦🔥';
-    if (humidity >= 60) return '💦😊';
-    return '💦❄️';
+// Toggle expand/collapse
+function toggleCardExpand(card) {
+    const { data, localTime, risk, riskPct } = card._data;
+
+    if (expandedCard && expandedCard !== card) {
+        // collapse previously expanded
+        const prev = expandedCard._data;
+        expandedCard.innerHTML = getCompactCardHTML(prev.data, prev.localTime, prev.risk, prev.riskPct);
+        expandedCard.classList.remove('expanded');
+        expandedCard = null;
+    }
+
+    if (card.classList.contains('expanded')) {
+        card.innerHTML = getCompactCardHTML(data, localTime, risk, riskPct);
+        card.classList.remove('expanded');
+        expandedCard = null;
+    } else {
+        card.innerHTML = getExpandedCardHTML(data, localTime, risk, riskPct);
+        card.classList.add('expanded');
+        expandedCard = card;
+    }
 }
 
-function getOverallIcon(risk) {
-    if (risk === 'high') return '😰🌧️';
-    if (risk === 'medium') return '😅⛅';
-    return '😎☀️';
+// -----------------------
+// Helpers
+// -----------------------
+
+function getConditionIcon(condition) {
+    if (!condition) return '🌤️';
+    const c = condition.toLowerCase();
+    if (c.includes('storm')) return '⛈️';
+    if (c.includes('rain')) return '🌧️';
+    if (c.includes('cloud')) return '☁️';
+    if (c.includes('sun')) return '☀️';
+    if (c.includes('wind')) return '💨';
+    return '🌤️';
 }
 
-// Update risk meter based on risk assessment
-function updateRiskMeter(riskAssessment) {
-    const riskValue = riskAssessment.overall_risk === 'high' ? 90 : 
-                     riskAssessment.overall_risk === 'medium' ? 60 : 20;
-    
-    const needleAngle = (riskValue / 100) * 180 - 90;
-    document.getElementById('meter-needle').style.transform = `rotate(${needleAngle}deg)`;
-}
-
-// Generate suggestions based on weather and event type
 function generateSuggestions(eventType, riskAssessment) {
     const suggestionsList = document.getElementById('suggestion-list');
     suggestionsList.innerHTML = '';
-    
+
     const suggestions = [];
     const details = riskAssessment.details;
-    
-    // Weather-based suggestions
+
     if (details.temperature.risk === 'high') {
         if (details.temperature.value > 28) {
-            suggestions.push('☀️ Provide shade structures and hydration stations');
-            suggestions.push('🧴 Recommend sunscreen and light-colored clothing');
+            suggestions.push('☀️ Provide shade and hydration stations');
+            suggestions.push('🧴 Recommend sunscreen and light clothing');
         } else {
             suggestions.push('🧥 Advise attendees to bring warm clothing');
-            suggestions.push('☕ Set up warming stations with hot beverages');
+            suggestions.push('☕ Offer hot beverages');
         }
     }
-    
     if (details.precipitation.risk === 'high') {
         suggestions.push('☔ Provide covered areas and umbrellas');
-        suggestions.push('👢 Recommend waterproof footwear');
     }
-    
     if (details.wind.risk === 'high') {
-        suggestions.push('🎪 Secure all decorations and equipment');
-        suggestions.push('📋 Have backup indoor venue ready');
+        suggestions.push('🎪 Secure decorations and equipment');
     }
-    
     if (details.humidity && details.humidity.risk === 'high') {
-        suggestions.push('💧 Provide plenty of water and cooling stations');
-        suggestions.push('🌬️ Set up fans or air conditioning if possible');
+        suggestions.push('💧 Provide water and cooling stations');
     }
-    
-    // Event-type specific suggestions
+
     switch(eventType) {
-        case 'parade':
-            suggestions.push('🎉 Plan for covered viewing areas along the parade route');
-            break;
-        case 'concert':
-            suggestions.push('🎵 Ensure sound equipment is protected from weather');
-            break;
-        case 'picnic':
-            suggestions.push('🧺 Bring waterproof blankets and covers');
-            break;
-        case 'wedding':
-            suggestions.push('💒 Have a beautiful indoor backup venue ready');
-            break;
-        case 'sports':
-            suggestions.push('⚽ Check field conditions and have backup plans');
-            break;
-        case 'festival':
-            suggestions.push('🎪 Prepare for various weather conditions with multiple zones');
-            break;
-        case 'birthday':
-            suggestions.push('🎂 Have indoor party space as backup');
-            break;
+        case 'parade': suggestions.push('🎉 Plan covered viewing areas'); break;
+        case 'concert': suggestions.push('🎵 Protect sound equipment'); break;
+        case 'picnic': suggestions.push('🧺 Bring waterproof blankets'); break;
+        case 'wedding': suggestions.push('💒 Have indoor backup venue'); break;
+        case 'sports': suggestions.push('⚽ Check field conditions'); break;
+        case 'festival': suggestions.push('🎪 Prepare multiple zones'); break;
+        case 'birthday': suggestions.push('🎂 Indoor space as backup'); break;
     }
-    
-    // If no specific risks, add positive message
+
     if (suggestions.length === 0) {
         suggestions.push('🎉 Perfect conditions! Your event should go smoothly');
-        suggestions.push('📸 Great weather for photos and outdoor activities');
     }
-    
-    // Add suggestions to the list
+
     suggestions.forEach(suggestion => {
         const item = document.createElement('div');
         item.className = 'suggestion-item';
@@ -364,16 +289,13 @@ function generateSuggestions(eventType, riskAssessment) {
     });
 }
 
-// Export functions
+// Export/share
 function exportResults() {
     html2canvas(document.getElementById('results')).then(canvas => {
         const link = document.createElement('a');
         link.download = 'weather-report.png';
         link.href = canvas.toDataURL();
         link.click();
-    }).catch(() => {
-        // Fallback method
-        alert('Screenshot saved! (Note: In a real implementation, this would generate a downloadable PNG)');
     });
 }
 
@@ -387,21 +309,14 @@ function shareResults() {
         });
     } else {
         navigator.clipboard.writeText(url).then(() => {
-            alert('Shareable link copied to clipboard!');
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            alert('Could not copy link to clipboard.');
+            alert('Shareable link copied!');
         });
     }
 }
 
-// Initial calls when page loads
+// Init
 document.addEventListener('DOMContentLoaded', () => {
     createStars();
-    
-    // Set minimum date for datetime input to today
     const today = new Date().toISOString().slice(0, 16);
     document.getElementById('datetime').min = today;
-    
-    console.log('Weather app initialized successfully!');
 });

@@ -464,3 +464,20 @@ body {
         flex-direction: column;
     }
 }
+/* Highlight selected hour */
+.highlight-hour {
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+/* Expanded weather card (full width + bigger look) */
+.weather-card.expanded {
+    grid-column: 1 / -1;
+    transform: scale(1.02);
+    padding: 30px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+ 
