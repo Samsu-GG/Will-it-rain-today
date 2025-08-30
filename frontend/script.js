@@ -2,6 +2,60 @@
 
 // API base URL - change this in production
 const API_BASE_URL = 'http://localhost:5000';
+// // Location Suggestion Feature
+// document.getElementById('location-input').addEventListener('input', debounce(async (e) => { // for suggestion box...
+//     const query = e.target.value.trim();
+//     const suggestionsBox = document.getElementById('location-suggestions');
+
+//     if (query.length < 3) {
+//         suggestionsBox.classList.remove('visible');
+//         return;
+//     }
+
+//     try {
+//         const response = await fetch(`${API_BASE_URL}/api/location/suggest?q=${encodeURIComponent(query)}`);
+//         if (!response.ok) throw new Error('Failed to fetch suggestions');
+//         const suggestions = await response.json();
+
+//         suggestionsBox.innerHTML = '';
+//         if (suggestions.length > 0) {
+//             suggestions.forEach(item => {
+//                 const suggestionDiv = document.createElement('div');
+//                 suggestionDiv.className = 'suggestion-item-loc';
+//                 suggestionDiv.textContent = item.place_name;
+//                 suggestionDiv.addEventListener('click', () => {
+//                     document.getElementById('location-input').value = item.place_name;
+//                     suggestionsBox.classList.remove('visible');
+//                 });
+//                 suggestionsBox.appendChild(suggestionDiv);
+//             });
+//             suggestionsBox.classList.add('visible');
+//         } else {
+//             suggestionsBox.classList.remove('visible');
+//         }
+
+//     } catch (error) {
+//         console.error('Error fetching suggestions:', error);
+//         suggestionsBox.classList.remove('visible');
+//     }
+// }, 300));
+
+// // Hide suggestions when clicking outside
+// document.addEventListener('click', (e) => {
+//     if (!e.target.closest('.form-group')) {
+//         document.getElementById('location-suggestions').classList.remove('visible');
+//     }
+// });
+
+// // Debounce function
+// function debounce(func, delay) {
+//     let timeoutId;
+//     return function(...args) {
+//         clearTimeout(timeoutId);
+//         timeoutId = setTimeout(() => func.apply(this, args), delay);
+//     };
+// }
+
 
 // Function to create animated stars
 function createStars() {
@@ -33,13 +87,13 @@ document.getElementById('location-input').addEventListener('input', debounce(asy
     const query = e.target.value.trim();
     const suggestionsBox = document.getElementById('location-suggestions');
 
-    if (query.length < 3) {
+    if (query.length < 2) {
         suggestionsBox.classList.remove('visible');
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/location/search?query=${encodeURIComponent(query)}`);
+        const response = await fetch(`${API_BASE_URL}/api/location/suggest?q=${encodeURIComponent(query)}`);
         if (!response.ok) {
             throw new Error('Failed to fetch suggestions');
         }
@@ -50,10 +104,16 @@ document.getElementById('location-input').addEventListener('input', debounce(asy
             suggestions.forEach(item => {
                 const suggestionDiv = document.createElement('div');
                 suggestionDiv.className = 'suggestion-item-loc';
-                suggestionDiv.textContent = item.place_name;
-                suggestionDiv.addEventListener('click', () => {
-                    document.getElementById('location-input').value = item.place_name;
-                    suggestionsBox.classList.remove('visible');
+                // suggestionDiv.textContent = item.place_name;
+                // suggestionDiv.addEventListener('click', () => {
+                //     document.getElementById('location-input').value = item.place_name; its error..
+                //     suggestionsBox.classList.remove('visible');
+                suggestionDiv.textContent = `${item.area_name}, ${item.district_name}`;
+                 suggestionDiv.addEventListener('click', () => {
+                document.getElementById('location-input').value = `${item.area_name}, ${item.district_name}`;
+              suggestionsBox.classList.remove('visible');
+
+
                 });
                 suggestionsBox.appendChild(suggestionDiv);
             });

@@ -176,29 +176,32 @@ body {
 .suggestions-box {
     position: absolute;
     z-index: 10;
-    width: calc(100% - 80px); /* Adjust based on form padding */
-    background: rgba(10, 10, 15, 0.9);
+    width: calc(100% - 80px); /* adjust if your input has different padding */
+    background: rgba(219, 219, 222, 0.9);
     border: 1px solid #00ffff;
     border-top: none;
     border-radius: 0 0 10px 10px;
     max-height: 200px;
     overflow-y: auto;
-    display: none; /* Hidden by default */
+    display: none;
+   
 }
 
 .suggestions-box.visible {
     display: block;
+    color: #000000;
 }
 
 .suggestion-item-loc {
     padding: 10px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    
 }
 
 .suggestion-item-loc:hover {
     background-color: rgba(0, 255, 255, 0.1);
 }
+
 
 /* New: Datetime input wrapper and OK button */
 .datetime-wrapper {
