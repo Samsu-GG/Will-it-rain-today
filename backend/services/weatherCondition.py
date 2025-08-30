@@ -1,6 +1,7 @@
 import json
 import os
 
+
 class WeatherConditionClassifier:
     def __init__(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))

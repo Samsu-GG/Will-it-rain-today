@@ -1,15 +1,12 @@
 import requests
 
+
 def get_coordinates(place_name: str):
     """
     Convert a place name into latitude & longitude using OpenStreetMap Nominatim API.
     """
     url = "https://nominatim.openstreetmap.org/search"
-    params = {
-        "q": place_name,
-        "format": "json",
-        "limit": 1
-    }
+    params = {"q": place_name, "format": "json", "limit": 1}
 
     try:
         response = requests.get(url, params=params, headers={"User-Agent": "WeatherRiskApp/1.0"})

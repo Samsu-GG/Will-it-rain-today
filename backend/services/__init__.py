@@ -13,7 +13,7 @@ __all__ = [
     "get_cached_response",
     "ForecastClient",
     "get_coordinates",
-    "WeatherConditionClassifier"
+    "WeatherConditionClassifier",
 ]
 
- # it define if we use "from services import * " then which which function and class will be imported
+# it define if we use "from services import * " then which which function and class will be imported

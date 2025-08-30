@@ -124,7 +124,6 @@ def get_future_data(latitude, longitude, target_date):
     return hourly_data
 
 
-
 def get_historical_data(latitude, longitude, target_date, current_time, is_today):
     print(f"📚 Getting historical data: lat={latitude}, lon={longitude}, date={target_date}, is_today={is_today}")
     hourly_data = []
@@ -138,7 +137,7 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
         for hour in range(24):
             time_key = f"{target_date_str}{hour:02d}"
 
-            if ("T2M" in properties and time_key in properties["T2M"] and (hour <= current_time.hour or not is_today)):
+            if "T2M" in properties and time_key in properties["T2M"] and (hour <= current_time.hour or not is_today):
                 temperature = properties["T2M"][time_key]
                 precipitation = properties["PRECTOTCORR"].get(time_key, 0) if "PRECTOTCORR" in properties else 0
                 wind_speed = properties["WS2M"].get(time_key, 0) if "WS2M" in properties else 0
@@ -149,9 +148,7 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
                 )
 
                 # Get weather condition
-                condition = condition_classifier.get_condition(
-                    temperature, precipitation, wind_speed, humidity
-                )
+                condition = condition_classifier.get_condition(temperature, precipitation, wind_speed, humidity)
 
                 hourly_data.append(
                     {
@@ -210,40 +207,43 @@ def get_historical_data(latitude, longitude, target_date, current_time, is_today
 
     print(f"📦 Total hourly data points processed: {len(hourly_data)}")
     return hourly_data
-@app.route("/api/location/suggest", methods=["GET"]) # for get area suggestion...
+
+
+@app.route("/api/location/suggest", methods=["GET"])  # for get area suggestion...
 def location_suggest():
     query = request.args.get("q")
     if not query:
         return jsonify({"error": "Query parameter q is required"}), 400
-    
+
     suggestions = get_area_suggestions(query)
     return jsonify(suggestions)
 
 
-@app.route('/')
+@app.route("/")
 def serve_frontend():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(".", "index.html")
 
-@app.route('/<path:path>')
+
+@app.route("/<path:path>")
 def serve_static(path):
-    return send_from_directory('.', path)
+    return send_from_directory(".", path)
+
+
 @app.route("/api/location/coordinates", methods=["POST"])
 def get_location_coordinates():
     data = request.get_json()
-    place_name = data.get('place_name')
-    
+    place_name = data.get("place_name")
+
     if not place_name:
         return jsonify({"error": "place_name is required"}), 400
-    
+
     coordinates = get_coordinates(place_name)
     if coordinates:
         return jsonify(coordinates)
     else:
         return jsonify({"error": "Location not found"}), 404
-    
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
- 
